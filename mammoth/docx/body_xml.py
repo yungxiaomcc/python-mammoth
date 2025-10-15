@@ -165,6 +165,7 @@ def _create_reader(numbering, content_types, relationships, styles, docx_file, f
         else:
             alignment = properties.find_child_or_null("w:jc").attributes.get("w:val")
             indent = _read_paragraph_indent(properties.find_child_or_null("w:ind"))
+            outline_level = properties.find_child_or_null("w:outlineLvl").attributes.get("w:val")
 
             children_xml = element.children
             if deleted_paragraph_contents:
@@ -184,6 +185,7 @@ def _create_reader(numbering, content_types, relationships, styles, docx_file, f
                     ),
                     alignment=alignment,
                     indent=indent,
+                    outline_level=outline_level,
                 )).append_extra()
 
     def _read_paragraph_style(properties):

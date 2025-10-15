@@ -326,7 +326,29 @@ class _DocumentConverter(documents.element_visitor(args=1)):
 
     def _find_html_path_for_paragraph(self, paragraph):
         default = html_paths.path([html_paths.element("p", fresh=True)])
-        return self._find_html_path(paragraph, "paragraph", default, warn_unrecognised=True)
+        
+        # 首先尝试样式映射（保持用户自定义的优先级）
+        html_path = self._find_html_path(paragraph, "paragraph", default=None, warn_unrecognised=False)
+        if html_path is not None:
+            return html_path
+        
+        # 如果没有样式映射匹配，尝试使用大纲层级
+        if paragraph.outline_level is not None:
+            level = int(paragraph.outline_level)
+            # Word 的大纲层级：0-8，其中 0-5 对应 h1-h6
+            if 0 <= level <= 5:
+                heading_level = level + 1  # 0 -> h1, 1 -> h2, ..., 5 -> h6
+                return html_paths.path([html_paths.element("h{}".format(heading_level), fresh=True)])
+        
+        # 如果有未识别的样式，发出警告
+        if getattr(paragraph, "style_id", None) is not None:
+            self._messages.append(results.warning(
+                "Unrecognised paragraph style: {0} (Style ID: {1})".format(
+                    paragraph.style_name, paragraph.style_id)
+            ))
+        
+        # 最后使用默认值
+        return default
 
     def _find_html_path_for_run(self, run):
         return self._find_html_path(run, "run", default=html_paths.empty, warn_unrecognised=True)
